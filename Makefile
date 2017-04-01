@@ -1,4 +1,4 @@
-LDLIBS=-lSDL2 -lGLEW
+LDLIBS=-lSDL2 -lGLEW -lGL
 
 all: drawing
 

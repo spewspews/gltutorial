@@ -17,15 +17,14 @@ float vertices[] = {
 	-0.5, -0.5,
 };
 
-GLuint
-bindvertices(void)
+void
+bindtriangle(void)
 {
 	GLuint vbo;
 
 	glGenBuffers(1, &vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-	return vbo;
 }
 
 GLuint
@@ -88,6 +87,7 @@ int uiloop(void)
 	SDL_Keycode keysym;
 
 	for(;;) {
+		glDrawArrays(GL_TRIANGLES, 0, 3);
 		SDL_GL_SwapWindow(screen);
 		while(SDL_PollEvent(&e))
 		switch(e.type) {
@@ -105,9 +105,13 @@ int uiloop(void)
 int
 main(void)
 {
-	GLuint shaderprog, vertexshader, fragmentshader;
+	GLuint shaderprog, vertexshader, fragmentshader, vao;
+	GLint posattr;
 
 	initdraw();
+
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
 
 	vertexshader = compileshader("flat.vert", GL_VERTEX_SHADER);
 	fragmentshader = compileshader("white.frag", GL_FRAGMENT_SHADER);
@@ -115,8 +119,15 @@ main(void)
 	shaderprog = glCreateProgram();
 	glAttachShader(shaderprog, vertexshader);
 	glAttachShader(shaderprog, fragmentshader);
+
 	glLinkProgram(shaderprog);
 	glUseProgram(shaderprog);
+
+	bindtriangle();
+
+	posattr = glGetAttribLocation(shaderprog, "position");
+	glVertexAttribPointer(posattr, 2, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(posattr);
 
 	uiloop();
 
