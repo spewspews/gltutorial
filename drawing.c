@@ -8,15 +8,14 @@
 
 #include <stdlib.h>
 #include <math.h>
-#include <time.h>
 
 SDL_Window *screen;
 SDL_GLContext glcontext;
 
-float vertices[] = {
-	0.0, 0.5,
-	0.5, -0.5,
-	-0.5, -0.5,
+GLfloat vertices[] = {
+	 0.0,  0.5, 1.0, 0.0, 0.0,
+	 0.5, -0.5, 0.0, 1.0, 0.0,
+	-0.5, -0.5, 0.0, 0.0, 1.0,
 };
 
 GLuint
@@ -84,19 +83,12 @@ initdraw(void)
 	return 0;
 }
 
-int uiloop(GLint tricolor)
+int uiloop(void)
 {
 	SDL_Event e;
 	SDL_Keycode keysym;
-	struct timespec tsstart, tsnow;
-	double tdiff;
 
-	clock_gettime(CLOCK_MONOTONIC, &tsstart);
 	for(;;) {
-		clock_gettime(CLOCK_MONOTONIC, &tsnow);
-		tdiff = tsnow.tv_nsec - tsstart.tv_nsec;
-		glUniform3f(tricolor, (sin(fmod(tdiff*4.0, M_PI*2)) + 1.0) / 2.0, 0.0, 0.0);
-
 		glClearColor(0.0, 0.0, 0.0, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT);
 
@@ -121,7 +113,7 @@ int
 main(void)
 {
 	GLuint shaderprog, vertexshader, fragmentshader, vao, vbo;
-	GLint position, tricolor;
+	GLint position, color;
 
 	initdraw();
 
@@ -129,23 +121,27 @@ main(void)
 	glBindVertexArray(vao);
 
 	vertexshader = compileshader("flat.vert", GL_VERTEX_SHADER);
-	fragmentshader = compileshader("white.frag", GL_FRAGMENT_SHADER);
+	fragmentshader = compileshader("colors.frag", GL_FRAGMENT_SHADER);
 
 	shaderprog = glCreateProgram();
 	glAttachShader(shaderprog, vertexshader);
 	glAttachShader(shaderprog, fragmentshader);
 
+	glBindFragDataLocation(shaderprog, 0, "outColor");
 	glLinkProgram(shaderprog);
 	glUseProgram(shaderprog);
 
 	vbo = bindtriangle();
 
 	position = glGetAttribLocation(shaderprog, "position");
-	glVertexAttribPointer(position, 2, GL_FLOAT, GL_FALSE, 0, 0);
 	glEnableVertexAttribArray(position);
+	glVertexAttribPointer(position, 2, GL_FLOAT, GL_FALSE, 5*sizeof(GLfloat), 0);
 
-	tricolor = glGetUniformLocation(shaderprog, "tricolor");
-	uiloop(tricolor);
+	color = glGetAttribLocation(shaderprog, "color");
+	glEnableVertexAttribArray(color);
+	glVertexAttribPointer(color, 3, GL_FLOAT, GL_FALSE, 5*sizeof(GLfloat), (void*)(2*sizeof(GLfloat)));
+
+	uiloop();
 
 	glDeleteProgram(shaderprog);
 	glDeleteShader(fragmentshader);
