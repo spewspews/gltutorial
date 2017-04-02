@@ -38,7 +38,7 @@ compileshader(char *file, GLenum shadertype)
 	ssize_t n;
 
 	fd = open(file, O_RDONLY);
-	n = read(fd, buf, sizeof(buf));
+	n = read(fd, buf, sizeof(buf)-1);
 	if(n <= 0) {
 		fprintf(stderr, "Could not read shader %s\n", file);
 		abort();
