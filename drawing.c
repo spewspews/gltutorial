@@ -7,7 +7,6 @@
 #include <unistd.h>
 
 #include <stdlib.h>
-#include <math.h>
 
 SDL_Window *screen;
 SDL_GLContext glcontext;
