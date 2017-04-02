@@ -7,6 +7,8 @@
 #include <unistd.h>
 
 #include <stdlib.h>
+#include <math.h>
+#include <time.h>
 
 SDL_Window *screen;
 SDL_GLContext glcontext;
@@ -17,7 +19,7 @@ float vertices[] = {
 	-0.5, -0.5,
 };
 
-void
+GLuint
 bindtriangle(void)
 {
 	GLuint vbo;
@@ -25,6 +27,7 @@ bindtriangle(void)
 	glGenBuffers(1, &vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+	return vbo;
 }
 
 GLuint
@@ -81,14 +84,26 @@ initdraw(void)
 	return 0;
 }
 
-int uiloop(void)
+int uiloop(GLint tricolor)
 {
 	SDL_Event e;
 	SDL_Keycode keysym;
+	struct timespec tsstart, tsnow;
+	double tdiff;
 
+	clock_gettime(CLOCK_MONOTONIC, &tsstart);
 	for(;;) {
+		clock_gettime(CLOCK_MONOTONIC, &tsnow);
+		tdiff = tsnow.tv_nsec - tsstart.tv_nsec;
+		glUniform3f(tricolor, (sin(fmod(tdiff*4.0, M_PI*2)) + 1.0) / 2.0, 0.0, 0.0);
+
+		glClearColor(0.0, 0.0, 0.0, 1.0);
+		glClear(GL_COLOR_BUFFER_BIT);
+
 		glDrawArrays(GL_TRIANGLES, 0, 3);
+
 		SDL_GL_SwapWindow(screen);
+
 		while(SDL_PollEvent(&e))
 		switch(e.type) {
 			case SDL_QUIT:
@@ -105,8 +120,8 @@ int uiloop(void)
 int
 main(void)
 {
-	GLuint shaderprog, vertexshader, fragmentshader, vao;
-	GLint posattr;
+	GLuint shaderprog, vertexshader, fragmentshader, vao, vbo;
+	GLint position, tricolor;
 
 	initdraw();
 
@@ -123,13 +138,21 @@ main(void)
 	glLinkProgram(shaderprog);
 	glUseProgram(shaderprog);
 
-	bindtriangle();
+	vbo = bindtriangle();
 
-	posattr = glGetAttribLocation(shaderprog, "position");
-	glVertexAttribPointer(posattr, 2, GL_FLOAT, GL_FALSE, 0, 0);
-	glEnableVertexAttribArray(posattr);
+	position = glGetAttribLocation(shaderprog, "position");
+	glVertexAttribPointer(position, 2, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(position);
 
-	uiloop();
+	tricolor = glGetUniformLocation(shaderprog, "tricolor");
+	uiloop(tricolor);
+
+	glDeleteProgram(shaderprog);
+	glDeleteShader(fragmentshader);
+	glDeleteShader(vertexshader);
+
+	glDeleteBuffers(1, &vbo);
+	glDeleteVertexArrays(1, &vao);
 
 	SDL_GL_DeleteContext(glcontext);
 	SDL_Quit();
