@@ -12,13 +12,15 @@ SDL_Window *screen;
 SDL_GLContext glcontext;
 
 GLfloat vertices[] = {
-	-0.5,  0.5, 1.0, 0.0, 0.0,
-	 0.5,  0.5, 0.0, 1.0, 0.0,
-	 0.5, -0.5, 0.0, 0.0, 1.0,
+	-0.5,  0.5, 1.0, 0.0, 0.0,	// top left
+	 0.5,  0.5, 0.0, 1.0, 0.0,	// top right
+	 0.5, -0.5, 0.0, 0.0, 1.0,	// bottom right
+	-0.5, -0.5, 1.0, 1.0, 1.0,	// bottom left
+};
 
-	 0.5, -0.5, 0.0, 0.0, 1.0,
-	-0.5, -0.5, 1.0, 1.0, 1.0,
-	-0.5,  0.5, 1.0, 0.0, 0.0,
+GLuint elements[] = {
+	0, 1, 2,
+	2, 3, 0,
 };
 
 GLuint
@@ -30,6 +32,17 @@ bindtriangle(void)
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 	return vbo;
+}
+
+GLuint
+bindtriangleindices(void)
+{
+	GLuint ebo;
+
+	glGenBuffers(1, &ebo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elements), elements, GL_STATIC_DRAW);
+	return ebo;
 }
 
 GLuint
@@ -95,7 +108,7 @@ int uiloop(void)
 		glClearColor(0.0, 0.0, 0.0, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		glDrawArrays(GL_TRIANGLES, 0, 6);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 		SDL_GL_SwapWindow(screen);
 
@@ -115,7 +128,7 @@ int uiloop(void)
 int
 main(void)
 {
-	GLuint shaderprog, vertexshader, fragmentshader, vao, vbo;
+	GLuint shaderprog, vertexshader, fragmentshader, vao, vbo, ebo;
 	GLint position, color;
 
 	initdraw();
@@ -135,6 +148,7 @@ main(void)
 	glUseProgram(shaderprog);
 
 	vbo = bindtriangle();
+	ebo = bindtriangleindices();
 
 	position = glGetAttribLocation(shaderprog, "position");
 	glEnableVertexAttribArray(position);
@@ -151,6 +165,7 @@ main(void)
 	glDeleteShader(vertexshader);
 
 	glDeleteBuffers(1, &vbo);
+	glDeleteBuffers(1, &ebo);
 	glDeleteVertexArrays(1, &vao);
 
 	SDL_GL_DeleteContext(glcontext);
