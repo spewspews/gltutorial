@@ -99,15 +99,21 @@ initdraw(void)
 	return 0;
 }
 
-int uiloop(void)
+double scale = 1.0;
+
+int
+uiloop(GLuint shaderprog)
 {
 	SDL_Event e;
 	SDL_Keycode keysym;
+	GLint glscale;
 
 	for(;;) {
 		glClearColor(0.0, 0.0, 0.0, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT);
 
+		glscale = glGetUniformLocation(shaderprog, "scale");
+		glUniform1f(glscale, scale);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 		SDL_GL_SwapWindow(screen);
@@ -118,8 +124,18 @@ int uiloop(void)
 				return 0;
 			case SDL_KEYDOWN:
 				keysym = e.key.keysym.sym;
-				if(keysym == SDLK_q || keysym == SDLK_ESCAPE)
+				switch(keysym) {
+				case SDLK_q:
+				case SDLK_ESCAPE:
 					return 0;
+				case SDLK_z:
+					scale *= 1.3;
+					break;
+				case SDLK_o:
+					scale /= 1.3;
+					break;
+				}
+				break;
 		}
 		SDL_Delay(100);
 	}
@@ -158,7 +174,7 @@ main(void)
 	glEnableVertexAttribArray(color);
 	glVertexAttribPointer(color, 3, GL_FLOAT, GL_FALSE, 5*sizeof(GLfloat), (void*)(2*sizeof(GLfloat)));
 
-	uiloop();
+	uiloop(shaderprog);
 
 	glDeleteProgram(shaderprog);
 	glDeleteShader(fragmentshader);
