@@ -12,9 +12,13 @@ SDL_Window *screen;
 SDL_GLContext glcontext;
 
 GLfloat vertices[] = {
-	 0.0,  0.5, 1.0, 0.0, 0.0,
-	 0.5, -0.5, 0.0, 1.0, 0.0,
-	-0.5, -0.5, 0.0, 0.0, 1.0,
+	-0.5,  0.5, 1.0, 0.0, 0.0,
+	 0.5,  0.5, 0.0, 1.0, 0.0,
+	 0.5, -0.5, 0.0, 0.0, 1.0,
+
+	 0.5, -0.5, 0.0, 0.0, 1.0,
+	-0.5, -0.5, 1.0, 1.0, 1.0,
+	-0.5,  0.5, 1.0, 0.0, 0.0,
 };
 
 GLuint
@@ -91,7 +95,7 @@ int uiloop(void)
 		glClearColor(0.0, 0.0, 0.0, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
 
 		SDL_GL_SwapWindow(screen);
 
