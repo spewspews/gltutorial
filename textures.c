@@ -22,12 +22,12 @@ Vertex vertices[] = {
 };
 
 GLuint elements[] = {
-        0, 1, 2,
-        2, 3, 0,
+	0, 1, 2,
+	2, 3, 0,
 };
 
 GLuint
-loadglenda(void)
+bindglenda(void)
 {
 	GLuint tex;
 	int x, y;
@@ -129,7 +129,7 @@ main(void)
 
 	vbo = bindtriangle();
 	ebo = bindindices();
-	tex = loadglenda();
+	tex = bindglenda();
 
         position = glGetAttribLocation(shaderprog, "position");
         glEnableVertexAttribArray(position);
