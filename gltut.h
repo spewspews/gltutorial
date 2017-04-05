@@ -5,6 +5,7 @@
 
 GLuint compileshader(char*, GLenum);
 int initdraw(void);
+void shutdowndraw(void);
 
 extern SDL_Window *screen;
 extern SDL_GLContext glcontext;

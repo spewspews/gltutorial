@@ -11,6 +11,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+SDL_Window *screen;
+SDL_GLContext glcontext;
+
 GLuint
 compileshader(char *file, GLenum shadertype)
 {
@@ -63,4 +66,11 @@ initdraw(void)
 	glewInit();
 
 	return 0;
+}
+
+void
+shutdowndraw(void)
+{
+        SDL_GL_DeleteContext(glcontext);
+        SDL_Quit();
 }

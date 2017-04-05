@@ -5,14 +5,16 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
 
-SDL_Window *screen;
-SDL_GLContext glcontext;
+typedef struct Vertex Vertex;
+struct Vertex {
+        float x, y, r, g, b;
+};
 
-GLfloat vertices[] = {
-	-0.5,  0.5, 1.0, 0.0, 0.0,	// top left
-	 0.5,  0.5, 0.0, 1.0, 0.0,	// top right
-	 0.5, -0.5, 0.0, 0.0, 1.0,	// bottom right
-	-0.5, -0.5, 1.0, 1.0, 1.0,	// bottom left
+Vertex vertices[] = {
+	{-0.5,  0.5, 1.0, 0.0, 0.0},	// top left
+	{ 0.5,  0.5, 0.0, 1.0, 0.0},	// top right
+	{ 0.5, -0.5, 0.0, 0.0, 1.0},	// bottom right
+	{-0.5, -0.5, 1.0, 1.0, 1.0},	// bottom left
 };
 
 GLuint elements[] = {
@@ -95,8 +97,8 @@ main(void)
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
 
-	vertexshader = compileshader("flat.vert", GL_VERTEX_SHADER);
-	fragmentshader = compileshader("colors.frag", GL_FRAGMENT_SHADER);
+	vertexshader = compileshader("drawingshaders/flat.vert", GL_VERTEX_SHADER);
+	fragmentshader = compileshader("drawingshaders/colors.frag", GL_FRAGMENT_SHADER);
 
 	shaderprog = glCreateProgram();
 	glAttachShader(shaderprog, vertexshader);
