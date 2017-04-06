@@ -25,22 +25,23 @@ GLuint elements[] = {
 	2, 3, 0,
 };
 
-GLuint
-bindglenda(void)
+void
+bindtexture(char *file, GLuint tex, int active)
 {
-	GLuint tex;
 	int x, y;
 	uint8_t *image;
 
-	glGenTextures(1, &tex);
+	glActiveTexture(GL_TEXTURE0 + active);
 	glBindTexture(GL_TEXTURE_2D, tex);
 
-	image = stbi_load("glenda.gif", &x, &y, NULL, STBI_rgb);
+	image = stbi_load(file, &x, &y, NULL, STBI_rgb);
 	if(image == NULL) {
 		fprintf(stderr, "Could not load glenda\n");
 		abort();
 	}
+
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, x, y, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+
 	stbi_image_free(image);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -48,8 +49,6 @@ bindglenda(void)
 	glGenerateMipmap(GL_TEXTURE_2D);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_NEAREST);
-
-	return tex;
 }
 
 GLuint
@@ -108,7 +107,8 @@ uiloop(void)
 int
 main(void)
 {
-	GLuint shaderprog, vertexshader, fragmentshader, vao, vbo, ebo, tex;
+	GLuint shaderprog, vertexshader, fragmentshader,
+		vao, vbo, ebo, textures[2];
 	GLint position, color, texcoord;
 
 	initdraw();
@@ -129,7 +129,14 @@ main(void)
 
 	vbo = bindtriangle();
 	ebo = bindindices();
-	tex = bindglenda();
+
+	glGenTextures(2, textures);
+
+	bindtexture("glenda.gif", textures[0], 0);
+	glUniform1i(glGetUniformLocation(shaderprog, "glendatex"), 0);
+
+	bindtexture("sample.png", textures[1], 1);
+	glUniform1i(glGetUniformLocation(shaderprog, "kittytex"), 1);
 
 	position = glGetAttribLocation(shaderprog, "position");
 	glEnableVertexAttribArray(position);
@@ -149,7 +156,7 @@ main(void)
 	glDeleteShader(fragmentshader);
 	glDeleteShader(vertexshader);
 
-	glDeleteTextures(1, &tex);
+	glDeleteTextures(2, textures);
 	glDeleteBuffers(1, &ebo);
 	glDeleteBuffers(1, &vbo);
 	glDeleteVertexArrays(1, &vao);
