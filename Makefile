@@ -4,7 +4,7 @@ all: drawing textures
 
 drawing: gltut.o drawing.o
 
-textures: gltut.o textures.o
+textures: gltut.o image.o textures.o
 
 clean:
 	rm -f *.o drawing textures

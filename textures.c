@@ -1,5 +1,4 @@
 #include "gltut.h"
-#define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
 #define GLEW_STATIC
@@ -46,8 +45,9 @@ bindglenda(void)
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glGenerateMipmap(GL_TEXTURE_2D);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_NEAREST);
 
 	return tex;
 }
@@ -77,67 +77,67 @@ bindindices(void)
 int
 uiloop(void)
 {
-        SDL_Event e;
-        SDL_Keycode keysym;
+	SDL_Event e;
+	SDL_Keycode keysym;
 
-        for(;;) {
-                glClearColor(0.0, 0.0, 0.0, 1.0);
-                glClear(GL_COLOR_BUFFER_BIT);
+	for(;;) {
+		glClearColor(0.0, 0.0, 0.0, 1.0);
+		glClear(GL_COLOR_BUFFER_BIT);
 
-                glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
-                SDL_GL_SwapWindow(screen);
+		SDL_GL_SwapWindow(screen);
 
-                while(SDL_PollEvent(&e))
-                switch(e.type) {
-                        case SDL_QUIT:
-                                return 0;
-                        case SDL_KEYDOWN:
-                                keysym = e.key.keysym.sym;
-                                switch(keysym) {
-                                case SDLK_q:
-                                case SDLK_ESCAPE:
-                                        return 0;
-                                }
-                                break;
-                }
-                SDL_Delay(100);
-        }
+		while(SDL_PollEvent(&e))
+		switch(e.type) {
+			case SDL_QUIT:
+				return 0;
+			case SDL_KEYDOWN:
+				keysym = e.key.keysym.sym;
+				switch(keysym) {
+				case SDLK_q:
+				case SDLK_ESCAPE:
+					return 0;
+				}
+				break;
+		}
+		SDL_Delay(100);
+	}
 }
 
 int
 main(void)
 {
-        GLuint shaderprog, vertexshader, fragmentshader, vao, vbo, ebo, tex;
-        GLint position, color, texcoord;
+	GLuint shaderprog, vertexshader, fragmentshader, vao, vbo, ebo, tex;
+	GLint position, color, texcoord;
 
 	initdraw();
 
-        glGenVertexArrays(1, &vao);
-        glBindVertexArray(vao);
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
 
-        vertexshader = compileshader("texturesshaders/flat.vert", GL_VERTEX_SHADER);
-        fragmentshader = compileshader("texturesshaders/colors.frag", GL_FRAGMENT_SHADER);
+	vertexshader = compileshader("texturesshaders/flat.vert", GL_VERTEX_SHADER);
+	fragmentshader = compileshader("texturesshaders/colors.frag", GL_FRAGMENT_SHADER);
 
-        shaderprog = glCreateProgram();
-        glAttachShader(shaderprog, vertexshader);
-        glAttachShader(shaderprog, fragmentshader);
+	shaderprog = glCreateProgram();
+	glAttachShader(shaderprog, vertexshader);
+	glAttachShader(shaderprog, fragmentshader);
 
 	glBindFragDataLocation(shaderprog, 0, "outColor");
-        glLinkProgram(shaderprog);
-        glUseProgram(shaderprog);
+	glLinkProgram(shaderprog);
+	glUseProgram(shaderprog);
 
 	vbo = bindtriangle();
 	ebo = bindindices();
 	tex = bindglenda();
 
-        position = glGetAttribLocation(shaderprog, "position");
-        glEnableVertexAttribArray(position);
-        glVertexAttribPointer(position, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
+	position = glGetAttribLocation(shaderprog, "position");
+	glEnableVertexAttribArray(position);
+	glVertexAttribPointer(position, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
 
-        color = glGetAttribLocation(shaderprog, "color");
-        glEnableVertexAttribArray(color);
-        glVertexAttribPointer(color, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(2*sizeof(float)));
+	color = glGetAttribLocation(shaderprog, "color");
+	glEnableVertexAttribArray(color);
+	glVertexAttribPointer(color, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(2*sizeof(float)));
 
 	texcoord = glGetAttribLocation(shaderprog, "texcoord");
 	glEnableVertexAttribArray(texcoord);
@@ -145,13 +145,13 @@ main(void)
 
 	uiloop();
 
-        glDeleteProgram(shaderprog);
-        glDeleteShader(fragmentshader);
-        glDeleteShader(vertexshader);
+	glDeleteProgram(shaderprog);
+	glDeleteShader(fragmentshader);
+	glDeleteShader(vertexshader);
 
-        glDeleteBuffers(1, &vbo);
-        glDeleteBuffers(1, &ebo);
 	glDeleteTextures(1, &tex);
+	glDeleteBuffers(1, &ebo);
+	glDeleteBuffers(1, &vbo);
 	glDeleteVertexArrays(1, &vao);
 
 	shutdowndraw();
