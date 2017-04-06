@@ -10,14 +10,22 @@
  
 typedef struct Vertex Vertex;
 struct Vertex {
-	float x, y, r, g, b, s, t;
+	struct {
+		float x, y;
+	} pos;
+	struct {
+		float r, g, b;
+	} color;
+	struct {
+		float s, t;
+	} texpos;
 };
 
 Vertex vertices[] = {
-	{-0.5,  0.5, 1.0, 0.0, 0.0, 0.0, 0.0},     // top left
-	{ 0.5,  0.5, 0.0, 1.0, 0.0, 1.0, 0.0},     // top right
-	{ 0.5, -0.5, 0.0, 0.0, 1.0, 1.0, 1.0},     // bottom right
-	{-0.5, -0.5, 1.0, 1.0, 1.0, 0.0, 1.0},     // bottom left
+	{{-0.5,  0.5}, {1.0, 0.0, 0.0}, {0.0, 0.0}},     // top left
+	{{ 0.5,  0.5}, {0.0, 1.0, 0.0}, {1.0, 0.0}},     // top right
+	{{ 0.5, -0.5}, {0.0, 0.0, 1.0}, {1.0, 1.0}},     // bottom right
+	{{-0.5, -0.5}, {1.0, 1.0, 1.0}, {0.0, 1.0}},     // bottom left
 };
 
 GLuint elements[] = {
@@ -109,7 +117,7 @@ main(void)
 {
 	GLuint shaderprog, vertexshader, fragmentshader,
 		vao, vbo, ebo, textures[2];
-	GLint position, color, texcoord;
+	GLint position, color, texpos, glendatex, kittytex;
 
 	initdraw();
 
@@ -133,22 +141,25 @@ main(void)
 	glGenTextures(2, textures);
 
 	bindtexture("glenda.gif", textures[0], 0);
-	glUniform1i(glGetUniformLocation(shaderprog, "glendatex"), 0);
-
 	bindtexture("sample.png", textures[1], 1);
-	glUniform1i(glGetUniformLocation(shaderprog, "kittytex"), 1);
+
+	glendatex = glGetUniformLocation(shaderprog, "glendatex");
+	glUniform1i(glendatex, 0);
+
+	kittytex = glGetUniformLocation(shaderprog, "kittytex");
+	glUniform1i(kittytex, 1);
 
 	position = glGetAttribLocation(shaderprog, "position");
 	glEnableVertexAttribArray(position);
-	glVertexAttribPointer(position, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
+	glVertexAttribPointer(position, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, pos));
 
 	color = glGetAttribLocation(shaderprog, "color");
 	glEnableVertexAttribArray(color);
-	glVertexAttribPointer(color, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(2*sizeof(float)));
+	glVertexAttribPointer(color, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, color));
 
-	texcoord = glGetAttribLocation(shaderprog, "texcoord");
-	glEnableVertexAttribArray(texcoord);
-	glVertexAttribPointer(texcoord, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(5*sizeof(float)));
+	texpos = glGetAttribLocation(shaderprog, "texpos");
+	glEnableVertexAttribArray(texpos);
+	glVertexAttribPointer(texpos, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texpos));
 
 	uiloop();
 
