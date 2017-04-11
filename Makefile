@@ -1,6 +1,6 @@
 LDLIBS=-lm -lSDL2 -lGLEW -lGL
 
-all: drawing textures texturesex1 reflection
+all: drawing textures texturesex1 reflection water
 
 drawing: gltut.o drawing.o
 
@@ -10,7 +10,9 @@ texturesex1: gltut.o image.o texturesex1.o
 
 reflection: gltut.o image.o reflection.o
 
+water: gltut.o image.o water.o
+
 clean:
-	rm -f *.o drawing textures texturesex1 
+	rm -f *.o drawing textures texturesex1  reflection water
 
 .PHONY: clean all
