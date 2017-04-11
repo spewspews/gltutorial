@@ -16,7 +16,7 @@ main()
 	if(Texpos.y < 0.5)
 		outColor = texture(glendatex, Texpos);
 	else {
-		float sampleOff = sin((Texpos.y-0.5)*50+water)*0.2 - 0.2*sin(water);
+		float sampleOff = (sin((Texpos.y-0.5)*50+water) - sin(water))*0.2;
 		outColor = texture(glendatex, vec2(Texpos.x + sampleOff, Texpos.y));
 	}
 }
