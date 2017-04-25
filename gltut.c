@@ -14,12 +14,55 @@
 SDL_Window *screen;
 SDL_GLContext glcontext;
 
+#include "glerrors.h"
+
+void
+glerrchk(char *fmt, ...)
+{
+	static char buf[1024];
+	GLenum err;
+	va_list va;
+	int w;
+
+	if((err = glGetError()) == GL_NO_ERROR)
+		return;
+
+	va_start(va, fmt);
+	w = vsnprintf(buf, sizeof(buf), fmt, va);
+	va_end(va);
+	snprintf(buf+w, sizeof(buf)-w, ": %s\n", glerrors[err]);
+	fputs(buf, stderr);
+	exit(1);
+}
+
+GLint
+getuni(GLuint shaderprog, char *unistr)
+{
+	GLint uni;
+
+	uni = glGetUniformLocation(shaderprog, unistr);
+	if(uni == -1) {
+		fprintf(stderr, "Could not get uniform %s\n", unistr);
+		exit(1);
+	}
+	return uni;
+}
+
+void
+setuni1i(GLuint shaderprog, char *unistr, int i)
+{
+	GLint uni;
+
+	uni = getuni(shaderprog, unistr);
+	glUniform1i(uni, i);
+}
+
 GLuint
 compileshader(char *file, GLenum shadertype)
 {
 	GLint r;
 	GLuint shader;
-	char buf[512];
+	char buf[8192];
 	const char *sbuf;
 	int fd;
 	ssize_t n;
@@ -50,8 +93,10 @@ compileshader(char *file, GLenum shadertype)
 }
 
 int
-initdraw(void)
+initdraw(char *title)
 {
+	GLenum err;
+
 	SDL_Init(SDL_INIT_VIDEO);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,
 	                    SDL_GL_CONTEXT_PROFILE_CORE);
@@ -59,11 +104,17 @@ initdraw(void)
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
 	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 
-	screen = SDL_CreateWindow("OPENGL!!!!", SDL_WINDOWPOS_UNDEFINED,
+	screen = SDL_CreateWindow(title, SDL_WINDOWPOS_UNDEFINED,
 	                          SDL_WINDOWPOS_UNDEFINED, 640, 640, SDL_WINDOW_OPENGL);
 	glcontext = SDL_GL_CreateContext(screen);
 	glewExperimental = GL_TRUE;
 	glewInit();
+	err = glGetError();
+	if(err != GL_NO_ERROR && err != GL_INVALID_ENUM) {
+		fprintf(stderr, "glewInit failed: %d\n", err);
+		exit(1);
+	}
+	glerrchk("%s: glewInit failed", __func__);
 
 	return 0;
 }
