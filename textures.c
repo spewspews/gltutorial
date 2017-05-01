@@ -119,7 +119,7 @@ main(void)
 		vao, vbo, ebo, textures[2];
 	GLint position, color, texpos, glendatex, kittytex;
 
-	initdraw();
+	initdraw("textures");
 
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);

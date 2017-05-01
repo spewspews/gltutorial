@@ -12,13 +12,13 @@ lib/gltut.a: gltut.o image.o
 
 drawing: gltut.o drawing.o
 
-textures: gltut.o image.o textures.o
+textures: lib/gltut.a textures.o
 
-texturesex1: gltut.o image.o texturesex1.o
+texturesex1: lib/gltut.a texturesex1.o
 
-reflection: gltut.o image.o reflection.o
+reflection: lib/gltut.a reflection.o
 
-water: gltut.o image.o water.o
+water: lib/gltut.a water.o
 
 clean:
 	rm -f *.o drawing textures texturesex1 reflection water glerrors.h

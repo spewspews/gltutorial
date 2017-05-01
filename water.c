@@ -124,7 +124,7 @@ main(void)
 		vao, glbo[2], tex;
 	GLint position, color, texpos, glendatex;
 
-	initdraw();
+	initdraw("water");
 
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);

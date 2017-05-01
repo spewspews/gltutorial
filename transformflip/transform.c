@@ -77,10 +77,10 @@ bindtriangle(void)
 {
         GLuint vbo;
 
-        glGenBuffers(1, &vbo);
+	glGenBuffers(1, &vbo);
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
         glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-		glerrchk("%s", __func__);
+	glerrchk("%s", __func__);
         return vbo;
 }
 
@@ -89,10 +89,10 @@ bindindices(void)
 {
         GLuint ebo;
 
-        glGenBuffers(1, &ebo);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elements), elements, GL_STATIC_DRAW);
-		glerrchk("%s: $d", __func__, ebo);
+	glGenBuffers(1, &ebo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elements), elements, GL_STATIC_DRAW);
+	glerrchk("%s: $d", __func__, ebo);
         return ebo;
 }
 
@@ -171,12 +171,13 @@ uiloop(GLint model, GLint flip)
 	SDL_Keycode keysym;
 	Mat4 rotmatrix, flipmatrix;
 	int flipped;
-	float rot, xrot;
+	float rot, xrot, rotinc;
 
 	xm4_identity(xm(flipmatrix));
 	glUniformMatrix4fv(flip, 1, GL_TRUE, xm(flipmatrix));
 
 	flipped = 1;
+	rotinc = 3.0;
 	rot = 0.0;
 	xrot = -1.0;
 	for(;;) {
@@ -188,7 +189,7 @@ uiloop(GLint model, GLint flip)
 
 		xm4_rotate_z(xm(rotmatrix), rot);
 		glUniformMatrix4fv(model, 1, GL_TRUE, xm(rotmatrix));
-		rot += 3;
+		rot += rotinc;
 		if(rot >= 360)
 			rot = 0;
 
@@ -209,6 +210,12 @@ uiloop(GLint model, GLint flip)
 				case SDLK_SPACE:
 					xrot = 180.0;
 					flipped ^= 1;
+					break;
+				case SDLK_EQUALS:
+					rotinc++;
+					break;
+				case SDLK_MINUS:
+					rotinc--;
 					break;
 				}
 				break;
