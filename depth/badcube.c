@@ -14,15 +14,19 @@
 typedef struct CubeVertex CubeVertex;
 typedef struct Mat4 Mat4;
 typedef struct Vec3 Vec3;
+typedef struct Vec2 Vec2;
 
-struct CubeVertex {
-	struct {
-		GLfloat x, y, z;
-	} position;
-	struct {
-		GLfloat s, t;
-	} texpos;
-};
+typedef struct ShaderDat {
+	GLuint vert, frag;
+} ShaderDat;
+
+typedef struct VertexDat {
+	GLuint vbo, ebo;
+} VertexDat;
+
+typedef struct Object {
+	GLuint prog, vao;
+} Object;
 
 struct Mat4 {
 	GLfloat m[16];
@@ -30,6 +34,17 @@ struct Mat4 {
 
 struct Vec3 {
 	GLfloat x, y, z;
+};
+
+struct Vec2 {
+	GLfloat x, y;
+};
+
+struct CubeVertex {
+	Vec3 position;
+	struct {
+		GLfloat s, t;
+	} texpos;
 };
 
 CubeVertex cube[] = {
@@ -91,6 +106,18 @@ GLuint cubeind[] = {
 	22, 23, 20,
 };
 
+Vec2 mirror[] = {
+	{-1.0,  1.0},
+	{ 1.0,  1.0},
+	{ 1.0, -1.0},
+	{-1.0, -1.0},
+};
+
+GLuint mirrorind[] = {
+	0, 1, 2,
+	2, 3, 0,
+};
+
 void
 bindtexture(char *file, GLuint tex, int active)
 {
@@ -139,23 +166,22 @@ bindcubeind(void)
 	glGenBuffers(1, &ebo);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cubeind), cubeind, GL_STATIC_DRAW);
-	glerrchk("%s: $d", __func__, ebo);
+	glerrchk("%s: %d", __func__, ebo);
 	return ebo;
 }
 
 GLuint
-linkshaders(GLuint vshadr, GLuint fshadr)
+linkshaders(ShaderDat *sdat)
 {
-	GLuint shaderprog;
+	GLuint prog;
 
-	shaderprog = glCreateProgram();
-	glAttachShader(shaderprog, vshadr);
-	glAttachShader(shaderprog, fshadr);
-	glBindFragDataLocation(shaderprog, 0, "outColor");
-	glLinkProgram(shaderprog);
+	prog = glCreateProgram();
+	glAttachShader(prog, sdat->vert);
+	glAttachShader(prog, sdat->frag);
+	glBindFragDataLocation(prog, 0, "outColor");
+	glLinkProgram(prog);
 	glerrchk("%s", __func__);
-
-	return shaderprog;
+	return prog;
 }
 
 void
@@ -170,6 +196,10 @@ setview(GLuint shaderprog)
 	up = (Vec3){0.0f, 0.0f, 1.0f};
 	xm4_lookat(xm(viewmatrix), xv(eye), xv(center), xv(up));
 	view = getuni(shaderprog, "view");
+	if(view == -1) {
+		fprintf(stderr, "%s: could not get attribute view\n", __func__);
+		exit(1);
+	}
 	glUniformMatrix4fv(view, 1, GL_FALSE, xm(viewmatrix));
 }
 
@@ -181,6 +211,10 @@ setproj(GLuint shaderprog)
 
 	xm4_persp(xm(projmatrix), 45.0f, 1.0f, 1.0f, 10.0f);
 	proj = getuni(shaderprog, "proj");
+	if(proj == -1) {
+		fprintf(stderr, "%s: could not get attribute proj\n", __func__);
+		exit(1);
+	}
 	glUniformMatrix4fv(proj, 1, GL_FALSE, xm(projmatrix));
 }
 
@@ -199,20 +233,23 @@ setvertattrib(GLuint shaderprog, char *attrstr, int nelem, size_t size, size_t o
 }
 
 int
-uiloop(GLuint cubeshader, GLuint floorshader)
+uiloop(Object *cube, Object *mirror)
 {
 	SDL_Event e;
 	SDL_Keycode keysym;
-	GLint model, flip;
+	GLint cubemodel, mirrormodel, flip;
 	Mat4 rotmatrix, flipmatrix;
 	float rot, rotinc;
-	int rotate, ncube;
+	int rotate, ncube, nmirror;
 
 	ncube = sizeof(cubeind)/sizeof(cubeind[0]);
+	nmirror = sizeof(mirrorind)/sizeof(mirrorind[0]);
 
-	flip = getuni(cubeshader, "flip");
-	model = getuni(cubeshader, "model");
+	flip = getuni(cube->prog, "flip");
+	cubemodel = getuni(cube->prog, "model");
+	mirrormodel = getuni(mirror->prog, "model");
 
+	glUseProgram(cube->prog);
 	xm4_identity(xm(flipmatrix));
 	glUniformMatrix4fv(flip, 1, GL_TRUE, xm(flipmatrix));
 	
@@ -220,18 +257,26 @@ uiloop(GLuint cubeshader, GLuint floorshader)
 	rotinc = 3.0;
 	rot = 0.0;
 	for(;;) {
-		glClearColor(0.0, 0.0, 0.0, 1.0);
+		glClearColor(1.0, 1.0, 1.0, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
-		xm4_rotate_z(xm(rotmatrix), rot);
-		glUniformMatrix4fv(model, 1, GL_TRUE, xm(rotmatrix));
 		if(rotate) {
+			xm4_rotate_z(xm(rotmatrix), rot);
+			glUseProgram(cube->prog);
+			glUniformMatrix4fv(cubemodel, 1, GL_TRUE, xm(rotmatrix));
+			glUseProgram(mirror->prog);
+			glUniformMatrix4fv(mirrormodel, 1, GL_TRUE, xm(rotmatrix));
 			rot += rotinc;
 			if(rot >= 360)
 				rot = 0;
 		}
 
+		glBindVertexArray(cube->vao);
+		glUseProgram(cube->prog);
 		glDrawElements(GL_TRIANGLES, ncube, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(mirror->vao);
+		glUseProgram(mirror->prog);
+		glDrawElements(GL_TRIANGLES, nmirror, GL_UNSIGNED_INT, 0);
 
 		SDL_GL_SwapWindow(screen);
 
@@ -253,73 +298,89 @@ uiloop(GLuint cubeshader, GLuint floorshader)
 					break;
 				case SDLK_SPACE:
 					rotate ^= 1;
+					break;
 				}
 				break;
 		}
 	}
 }
 
-typedef struct ShaderDat {
-	GLuint prog, vert, frag;
-} ShaderDat;
-
-typedef struct VertexDat {
-	GLuint vbo, ebo;
-} VertexDat;
-
-typedef struct Object {
-	GLuint prog, vao;
-} Object;
-
-void
+GLuint
 makecubeprog(ShaderDat *sdat, GLuint *textures)
 {
-	sdat->vert = compileshader("cube.vert", GL_VERTEX_SHADER);
-	sdat->frag = compileshader("cube.frag", GL_FRAGMENT_SHADER);
-	sdat->prog = linkshaders(sdat->vert, sdat->frag);
-	glUseProgram(sdat->prog);
+	GLuint prog;
 
-	setvertattrib(sdat->prog, "position", 3, sizeof(CubeVertex), offsetof(CubeVertex, position));
-	setvertattrib(sdat->prog, "texpos", 2, sizeof(CubeVertex), offsetof(CubeVertex, texpos));
+	prog = linkshaders(sdat);
+	glUseProgram(prog);
 
-	setview(sdat->prog);
-	setproj(sdat->prog);
+	setvertattrib(prog, "position", 3, sizeof(CubeVertex), offsetof(CubeVertex, position));
+	setvertattrib(prog, "texpos", 2, sizeof(CubeVertex), offsetof(CubeVertex, texpos));
+
+	setview(prog);
+	setproj(prog);
 
 	glGenTextures(2, textures);
 	bindtexture("../glenda.gif", textures[0], 0);
-	setuni1i(sdat->prog, "glendatex", 0);
+	setuni1i(prog, "glendatex", 0);
 	bindtexture("../sample.png", textures[1], 1);
-	setuni1i(sdat->prog, "kittytex", 1);
+	setuni1i(prog, "kittytex", 1);
+	return prog;
 }
 
 int
 main(void)
 {
-	ShaderDat cubeshader, floorshader;
-	VertexDat cubevert, floorvert;
-	GLuint vao, textures[2];
+	Object cubeobj, mirrorobj;
+	ShaderDat cubeshader, mirrorshader;
+	VertexDat cubevert, mirrorvert;
+	GLuint textures[2];
 
-	initdraw("Transform with MMX");
+	initdraw("Depth and Stencil");
 	glEnable(GL_DEPTH_TEST);
 
-	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
+	glGenVertexArrays(1, &cubeobj.vao);
+	glBindVertexArray(cubeobj.vao);
 	glerrchk("%s: bind of vao failed", __func__);
 
 	cubevert.vbo = bindcube();
 	cubevert.ebo = bindcubeind();
+	cubeshader.vert = compileshader("cube.vert", GL_VERTEX_SHADER);
+	cubeshader.frag = compileshader("cube.frag", GL_FRAGMENT_SHADER);
+	cubeobj.prog = makecubeprog(&cubeshader, textures);
 
-	makecubeprog(&cubeshader, textures);
+	glGenVertexArrays(1, &mirrorobj.vao);
+	glBindVertexArray(mirrorobj.vao);
+	glerrchk("%s: bind of mirror vao failed", __func__);
+	glGenBuffers(2, (GLuint*)&mirrorvert);
+	glBindBuffer(GL_ARRAY_BUFFER, mirrorvert.vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(mirror), mirror, GL_STATIC_DRAW);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mirrorvert.ebo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(mirrorind), mirrorind, GL_STATIC_DRAW);
+	glerrchk("%s: bind of mirror vertex or element buffers failed", __func__);
+	mirrorshader.vert = compileshader("mirror.vert", GL_VERTEX_SHADER);
+	mirrorshader.frag = compileshader("mirror.frag", GL_FRAGMENT_SHADER);
+	mirrorobj.prog = linkshaders(&mirrorshader);
+	glUseProgram(mirrorobj.prog);
+	setview(mirrorobj.prog);
+	setproj(mirrorobj.prog);
+	setvertattrib(mirrorobj.prog, "position", 2, sizeof(mirror[0]), 0);
 
-	uiloop(cubeshader.prog, floorshader.prog);
+	uiloop(&cubeobj, &mirrorobj);
 
-	glDeleteProgram(cubeshader.prog);
+	glDeleteProgram(cubeobj.prog);
 	glDeleteShader(cubeshader.frag);
 	glDeleteShader(cubeshader.vert);
 	glDeleteTextures(2, textures);
 	glDeleteBuffers(1, &cubevert.ebo);
 	glDeleteBuffers(1, &cubevert.vbo);
-	glDeleteVertexArrays(1, &vao);
+	glDeleteVertexArrays(1, &cubeobj.vao);
+
+	glDeleteProgram(mirrorobj.prog);
+	glDeleteShader(mirrorshader.frag);
+	glDeleteShader(mirrorshader.vert);
+	glDeleteBuffers(2, (GLuint*)&mirrorvert);
+	glDeleteVertexArrays(1, &mirrorobj.vao);
+	
 
 	shutdowndraw();
 
