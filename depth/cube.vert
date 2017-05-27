@@ -11,5 +11,5 @@ void
 main()
 {
 	Texpos = texpos;
-	gl_Position =  proj * view * flip * model * vec4(position, 1.0);
+	gl_Position =  proj * view * model * flip * vec4(position, 1.0);
 }

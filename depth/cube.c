@@ -189,7 +189,7 @@ setview(GLuint shaderprog)
 	Mat4 viewmatrix;
 	Vec3 eye, center, up;
 
-	eye = (Vec3){2.0f, 2.0f, 2.0f};
+	eye = (Vec3){2.0f, 2.0f, 1.3f};
 	center = (Vec3){0.0f, 0.0f, 0.0f};
 	up = (Vec3){0.0f, 0.0f, 1.0f};
 	xm4_lookat(xm(viewmatrix), xv(eye), xv(center), xv(up));
@@ -235,25 +235,28 @@ uiloop(Object *cube, Object *mirror)
 {
 	SDL_Event e;
 	SDL_Keycode keysym;
-	GLint cubemodel, mirrormodel, flip;
-	Mat4 rotmatrix, flipmatrix;
-	float rot, rotinc;
+	GLint cubemodel, mirrormodel, flip, blenduni, hazeuni;
+	Mat4 rotmatrix, flipmatrix, idmatrix;
+	float rot, rotinc, blend, blendinc;
 	int rotate, ncube, nmirror;
 
 	ncube = sizeof(cubeind)/sizeof(cubeind[0]);
 	nmirror = sizeof(mirrorind)/sizeof(mirrorind[0]);
 
+	xm4_identity(xm(idmatrix));
+	xm4_scalev(xm(flipmatrix), 1.0, 1.0, -1.0);
+
 	flip = getuni(cube->prog, "flip");
+	blenduni = getuni(cube->prog, "blend");
+	hazeuni = getuni(cube->prog, "haze");
 	cubemodel = getuni(cube->prog, "model");
 	mirrormodel = getuni(mirror->prog, "model");
 
-	glUseProgram(cube->prog);
-	xm4_identity(xm(flipmatrix));
-	glUniformMatrix4fv(flip, 1, GL_TRUE, xm(flipmatrix));
-	
 	rotate = 1;
-	rotinc = 3.0;
-	rot = 0.0;
+	rotinc = 3.0f;
+	rot = 0.0f;
+	blend = 0.0f;
+	blendinc = 0.02f;
 	for(;;) {
 		glClearColor(1.0, 1.0, 1.0, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
@@ -271,12 +274,38 @@ uiloop(Object *cube, Object *mirror)
 
 		glBindVertexArray(cube->vao);
 		glUseProgram(cube->prog);
+		glUniform1f(blenduni, blend);
+		glUniform1f(hazeuni, 1.0f);
+		glUniformMatrix4fv(flip, 1, GL_TRUE, xm(idmatrix));
 		glDrawElements(GL_TRIANGLES, ncube, GL_UNSIGNED_INT, 0);
+
+		glEnable(GL_STENCIL_TEST);
+
 		glBindVertexArray(mirror->vao);
 		glUseProgram(mirror->prog);
+		glStencilFunc(GL_ALWAYS, 1, 0xff);
+		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+		glStencilMask(0xff);
+		glDepthMask(GL_FALSE);
+		glClear(GL_STENCIL_BUFFER_BIT);
 		glDrawElements(GL_TRIANGLES, nmirror, GL_UNSIGNED_INT, 0);
 
+		glBindVertexArray(cube->vao);
+		glUseProgram(cube->prog);
+		glStencilFunc(GL_EQUAL, 1, 0xff);
+		glStencilMask(0x00);
+		glDepthMask(GL_TRUE);
+		glUniform1f(hazeuni, 0.3f);
+		glUniformMatrix4fv(flip, 1, GL_TRUE, xm(flipmatrix));
+		glDrawElements(GL_TRIANGLES, ncube, GL_UNSIGNED_INT, 0);
+
+		glDisable(GL_STENCIL_TEST);
+
 		SDL_GL_SwapWindow(screen);
+
+		blend += blendinc;
+		if(blend < 0.0f || blend > 1.0f)
+			blendinc = -blendinc;
 
 		while(SDL_PollEvent(&e))
 		switch(e.type) {
