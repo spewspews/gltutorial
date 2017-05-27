@@ -42,9 +42,7 @@ struct Vec2 {
 
 struct CubeVertex {
 	Vec3 position;
-	struct {
-		GLfloat s, t;
-	} texpos;
+	Vec2 texpos;
 };
 
 CubeVertex cube[] = {
@@ -282,25 +280,25 @@ uiloop(Object *cube, Object *mirror)
 
 		while(SDL_PollEvent(&e))
 		switch(e.type) {
-			case SDL_QUIT:
+		case SDL_QUIT:
+			return 0;
+		case SDL_KEYDOWN:
+			keysym = e.key.keysym.sym;
+			switch(keysym) {
+			case SDLK_q:
+			case SDLK_ESCAPE:
 				return 0;
-			case SDL_KEYDOWN:
-				keysym = e.key.keysym.sym;
-				switch(keysym) {
-				case SDLK_q:
-				case SDLK_ESCAPE:
-					return 0;
-				case SDLK_EQUALS:
-					rotinc++;
-					break;
-				case SDLK_MINUS:
-					rotinc--;
-					break;
-				case SDLK_SPACE:
-					rotate ^= 1;
-					break;
-				}
+			case SDLK_EQUALS:
+				rotinc++;
 				break;
+			case SDLK_MINUS:
+				rotinc--;
+				break;
+			case SDLK_SPACE:
+				rotate ^= 1;
+				break;
+			}
+			break;
 		}
 	}
 }
