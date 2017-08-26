@@ -3,7 +3,7 @@ LDLIBS=-lm -lSDL2 -lGLEW -lGL
 all: drawing textures texturesex1 reflection water
 
 glerrors.h: glerrors
-	./generrorstrings.awk $< > $@
+	awk -f generrorstrings.awk $< > $@
 
 gltut.o: glerrors.h
 
